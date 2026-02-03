@@ -1,11 +1,10 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
 
-interface ForumHeaderProps {
-  onLoginClick: () => void;
-}
-
-const ForumHeader = ({ onLoginClick }: ForumHeaderProps) => {
+const ForumHeader = () => {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
   const navItems = [
     { label: "Forums", href: "#", active: true },
     { label: "What's new", href: "#", hasDropdown: true },
@@ -54,15 +53,19 @@ const ForumHeader = ({ onLoginClick }: ForumHeaderProps) => {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
-            <button
-              onClick={onLoginClick}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Log in
-            </button>
-            <Button size="sm" className="text-sm">
-              Register
-            </Button>
+            {!isAuthPage && (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Log in
+                </Link>
+                <Button size="sm" className="text-sm" asChild>
+                  <Link to="/register">Register</Link>
+                </Button>
+              </>
+            )}
             <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="w-4 h-4" />
             </button>
