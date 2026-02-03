@@ -21,13 +21,15 @@ const ForumHeader = () => {
           <div className="flex items-center gap-8">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="w-7 h-7 text-primary" fill="currentColor">
-                  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-                  <circle cx="12" cy="12" r="4" fill="currentColor"/>
-                  <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="0.5"/>
-                </svg>
-              </div>
+              <Link to="/" aria-label="Home" className="inline-flex items-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40 flex items-center justify-center cursor-pointer">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-primary" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="0.5"/>
+                  </svg>
+                </div>
+              </Link>
             </div>
 
             {/* Navigation */}
