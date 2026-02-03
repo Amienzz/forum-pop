@@ -1,12 +1,9 @@
-import { useState } from "react";
 import ForumHeader from "@/components/ForumHeader";
 import ForumCategory from "@/components/ForumCategory";
 import ForumSidebar from "@/components/ForumSidebar";
 import ForumFooter from "@/components/ForumFooter";
-import LoginModal from "@/components/LoginModal";
 
 const Index = () => {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const generalItems = [
     {
@@ -160,7 +157,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ForumHeader onLoginClick={() => setIsLoginOpen(true)} />
+      <ForumHeader />
       
       {/* Page Title */}
       <div className="container mx-auto px-4 py-4">
@@ -185,9 +182,6 @@ const Index = () => {
       </div>
 
       <ForumFooter />
-
-      {/* Login Modal */}
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 };
