@@ -88,21 +88,33 @@ const Register = () => {
                     Upload photo
                   </Button>
                   <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG or GIF. Max 2MB.
+                    JPG or PNG. Max 2MB.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Full Name */}
+            {/* First Name */}
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">
-                Full name: <span className="text-destructive">*</span>
+                First name: <span className="text-destructive">*</span>
               </label>
               <Input 
                 type="text" 
                 className="bg-input border-border focus:border-primary"
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                Last name: <span className="text-destructive">*</span>
+              </label>
+              <Input 
+                type="text" 
+                className="bg-input border-border focus:border-primary"
+                placeholder="Enter your last name"
               />
             </div>
 
