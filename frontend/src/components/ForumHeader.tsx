@@ -1,10 +1,65 @@
-import { Search } from "lucide-react";
+import { Search, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const ForumHeader = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+  const [user, setUser] = useState<any>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+
+    // Listen for storage changes (logout from other tabs)
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    // Close dropdown when clicking outside
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-profile-menu]')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    document.addEventListener("click", handleClickOutside);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setShowProfileMenu(false);
+    navigate("/");
+  };
+
   const navItems = [
     { label: "Forums", href: "#", active: true },
     { label: "What's new", href: "#", hasDropdown: true },
@@ -55,7 +110,7 @@ const ForumHeader = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
-            {!isAuthPage && (
+            {!isAuthPage && !user && (
               <>
                 <Link
                   to="/login"
@@ -67,6 +122,70 @@ const ForumHeader = () => {
                   <Link to="/register">Register</Link>
                 </Button>
               </>
+            )}
+            {user && (
+              <div className="relative" data-profile-menu>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-primary/10 transition-colors"
+                >
+                  <Avatar className="w-8 h-8 [&_img]:object-cover">
+                    {user.photo ? (
+                      <AvatarImage src={user.photo} alt={user.fname} />
+                    ) : (
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                        {user.fname?.charAt(0)}{user.lname?.charAt(0)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="hidden sm:block text-sm text-foreground font-medium">
+                    {user.fname}
+                  </div>
+                  <span className="text-xs">▼</span>
+                </button>
+
+                {/* Profile Dropdown */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-lg shadow-lg z-50">
+                    <div className="py-2 px-4 border-b border-border">
+                      <p className="text-sm font-semibold text-foreground">
+                        {user.fname} {user.lname}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{user.email || "No email"}</p>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          navigate("/profile");
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors flex items-center gap-2"
+                      >
+                        <User className="w-4 h-4" />
+                        Profile
+                      </button>
+                      {user.role === "admin" && (
+                        <button
+                          onClick={() => {
+                            navigate("/admin");
+                            setShowProfileMenu(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-primary/10 transition-colors"
+                        >
+                          Admin Panel
+                        </button>
+                      )}
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2 border-t border-border mt-1 pt-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Log out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
               <Search className="w-4 h-4" />

@@ -57,8 +57,18 @@ async function ensureUploadsDir() {
 }
 
 const app = new Elysia()
-    // anti-brute force, idk why its being marked as wrong but it jsut works trust me
+    // anti-brute force, idk why its being marked as wrong but it just works trust me
     .use(rateLimit())
+    // CORS headers for frontend requests
+    .onBeforeHandle(({ set }) => {
+        set.headers['Access-Control-Allow-Origin'] = '*';
+        set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        set.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-user-role';
+    })
+    // Handle OPTIONS requests for CORS preflight
+    .options('/*', () => {
+        return 'OK';
+    })
     // Serve uploaded images statically but carefully
     .use(staticPlugin({
         assets: 'uploads',
@@ -155,6 +165,7 @@ const app = new Elysia()
                 id: user.id,
                 fname: user.first_name,
                 lname: user.last_name,
+                email: user.email,
                 role: user.role,
                 photo: user.profile_photo_path
             };
