@@ -30,6 +30,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       const user = await loginUser(data.email, data.password);
+      localStorage.setItem("user", JSON.stringify({ id: user.id, fname: user.fname, lname: user.lname, email: user.email, role: user.role, photo: user.photo }));
       toast({ title: "Welcome back!", description: `Logged in as ${user.fname} ${user.lname}` });
       navigate("/");
     } catch (err: any) {

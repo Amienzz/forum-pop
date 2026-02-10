@@ -1,10 +1,13 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
+import { getStoredUser } from "@/lib/api";
 
 const ForumHeader = () => {
   const location = useLocation();
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+  const user = getStoredUser();
+  const isAdmin = user?.role === "admin";
   const navItems = [
     { label: "Forums", href: "#", active: true },
     { label: "What's new", href: "#", hasDropdown: true },
@@ -57,6 +60,14 @@ const ForumHeader = () => {
           <div className="flex items-center gap-4">
             {!isAuthPage && (
               <>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   to="/login"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
