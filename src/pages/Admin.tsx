@@ -17,7 +17,7 @@ const Admin = () => {
     const fetchUsers = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         
-        const res = await fetch("/api/admin/users", {
+        const res = await fetch("http://localhost:3000/api/admin/users", {
             headers: {
                 "x-user-role": user.role || "user" // Simple role check for demo
             }

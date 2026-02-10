@@ -57,8 +57,18 @@ async function ensureUploadsDir() {
 }
 
 const app = new Elysia()
-    // anti-brute force, idk why its being marked as wrong but it jsut works trust me
+    // anti-brute force, idk why its being marked as wrong but it just works trust me
     .use(rateLimit())
+    // CORS headers for frontend requests
+    .onBeforeHandle(({ set }) => {
+        set.headers['Access-Control-Allow-Origin'] = '*';
+        set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        set.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-user-role';
+    })
+    // Handle OPTIONS requests for CORS preflight
+    .options('/*', () => {
+        return 'OK';
+    })
     // Serve uploaded images statically but carefully
     .use(staticPlugin({
         assets: 'uploads',
@@ -155,6 +165,7 @@ const app = new Elysia()
                 id: user.id,
                 fname: user.first_name,
                 lname: user.last_name,
+                email: user.email,
                 role: user.role,
                 photo: user.profile_photo_path
             };
@@ -165,18 +176,44 @@ const app = new Elysia()
             })
         })
 
-        // --- 3. Admin Panel Data ---
+        // --- 3. Protected admin dashboard (role-based access) ---
+        .get('/admin/dashboard', async ({ headers, set }) => {
+            const userRole = headers['x-user-role'];
+            if (userRole !== 'admin') {
+                set.status = 403;
+                return { error: 'Forbidden: Admins only.' };
+            }
+
+            const [totalResult] = await mysql `SELECT COUNT(*) AS count FROM users`;
+            const [adminResult] = await mysql `SELECT COUNT(*) AS count FROM users WHERE role = 'admin'`;
+            const [userResult] = await mysql `SELECT COUNT(*) AS count FROM users WHERE role = 'user'`;
+            const recentUsers = await mysql `SELECT id, first_name, last_name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 5`;
+
+            const totalUsers = Number((totalResult as any)?.count ?? 0);
+            const adminCount = Number((adminResult as any)?.count ?? 0);
+            const userCount = Number((userResult as any)?.count ?? 0);
+
+            return {
+                message: 'Welcome to the admin dashboard.',
+                role: 'admin',
+                stats: {
+                    totalUsers,
+                    adminCount,
+                    userCount,
+                },
+                recentUsers: recentUsers || [],
+            };
+        })
+
+        // --- 4. Admin Panel Data ---
         .get('/admin/users', async ({ headers, set }) => {
-            // NOTE: In a real app, verify the Session/JWT token here!
-            // This is a simplified check assuming you send a user-role header or cookie
-            const userRole = headers['x-user-role']; 
-            
+            const userRole = headers['x-user-role'];
             if (userRole !== 'admin') {
                 set.status = 403;
                 return { error: "Forbidden: Admins only." };
             }
 
-            const users = await mysql `SELECT id, first_name, last_name, email, role, created_at FROM users`;
+            const users = await mysql `SELECT id, first_name, last_name, email, phone_number, role, profile_photo_path, created_at FROM users ORDER BY created_at DESC`;
             return users;
         })
     )
