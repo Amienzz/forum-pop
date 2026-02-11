@@ -72,6 +72,7 @@ const Login = () => {
     try {
       const res = await fetch("/api/login", {
         method: "POST",
+        credentials: "include", // Send and receive cookies for JWT
         headers: {
           "Content-Type": "application/json",
         },
@@ -86,8 +87,9 @@ const Login = () => {
       if (res.ok) {
         // Store user info in localStorage
         localStorage.setItem("user", JSON.stringify(result));
-        // Redirect to home or dashboard
+        // Redirect to home or dashboard and refresh to load new session
         navigate("/");
+        window.location.reload();
       } else {
         setError(result.error || "Login failed");
       }

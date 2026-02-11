@@ -21,11 +21,6 @@ export function getStoredUser(): StoredUser | null {
   }
 }
 
-function adminHeaders(): Record<string, string> {
-  const user = getStoredUser();
-  return { "x-user-role": user?.role ?? "user" };
-}
-
 export interface AdminDashboardData {
   message: string;
   role: string;
@@ -34,10 +29,23 @@ export interface AdminDashboardData {
 }
 
 export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
-  const res = await fetch(`${API_BASE}/admin/dashboard`, { headers: adminHeaders() });
+  const res = await fetch(`${API_BASE}/admin/dashboard`, {
+    credentials: 'include' // Send HttpOnly cookies with request
+  });
+
+  // Check status before parsing
+  if (!res.ok) {
+    const contentType = res.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      const data = await res.json();
+      throw new Error((data as { error?: string })?.error || "Failed to load dashboard.");
+    }
+    if (res.status === 401) throw new Error("Unauthorized. Please log in.");
+    if (res.status === 403) throw new Error("Access denied. Admin only.");
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+
   const data = await res.json();
-  if (res.status === 403) throw new Error("Access denied.");
-  if (!res.ok) throw new Error((data as { error?: string })?.error || "Failed to load dashboard.");
   return data as AdminDashboardData;
 }
 
@@ -53,9 +61,22 @@ export interface AdminUserRow {
 }
 
 export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
-  const res = await fetch(`${API_BASE}/admin/users`, { headers: adminHeaders() });
+  const res = await fetch(`${API_BASE}/admin/users`, {
+    credentials: 'include' // Send HttpOnly cookies with request
+  });
+
+  // Check status before parsing
+  if (!res.ok) {
+    const contentType = res.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      const data = await res.json();
+      throw new Error((data as { error?: string })?.error || "Failed to load users.");
+    }
+    if (res.status === 401) throw new Error("Unauthorized. Please log in.");
+    if (res.status === 403) throw new Error("Access denied. Admin only.");
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+
   const data = await res.json();
-  if (res.status === 403) throw new Error("Access denied.");
-  if (!res.ok) throw new Error((data as { error?: string })?.error || "Failed to load users.");
   return Array.isArray(data) ? data : [];
 }

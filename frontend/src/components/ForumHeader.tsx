@@ -53,11 +53,24 @@ const ForumHeader = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    setShowProfileMenu(false);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      // Call backend to clear HttpOnly cookie
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include", // Send cookies to be cleared
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear local user data regardless of API call result
+      localStorage.removeItem("user");
+      setUser(null);
+      setShowProfileMenu(false);
+      navigate("/");
+      // Refresh page to clear any cached authentication state
+      window.location.reload();
+    }
   };
 
   const navItems = [

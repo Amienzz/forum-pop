@@ -10,9 +10,11 @@
     "@sinclair/typebox": "^0.34.48",
     "dotenv": "latest",
     "elysia": "latest",
-    "elysia-rate-limit": "^4.5.0"
+    "elysia-rate-limit": "^4.5.0",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "bun-types": "latest"
   },
   "module": "src/index.js"

@@ -4,6 +4,7 @@ import { Elysia, t } from 'elysia';
 import { staticPlugin } from '@elysiajs/static';
 import { rateLimit } from 'elysia-rate-limit';
 import { SQL } from "bun";
+import jwt from 'jsonwebtoken';
 
 // --- Database Connection ---
 const mysql = new SQL({
@@ -14,6 +15,11 @@ const mysql = new SQL({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
 });
+
+// --- JWT Configuration ---
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
+const JWT_EXPIRY = '24h';
+const JWT_EXPIRY_SECONDS = 86400; // 24 hours
 
 
 
@@ -56,14 +62,65 @@ async function ensureUploadsDir() {
     }
 }
 
+// --- JWT Authentication Middleware ---
+interface AuthPayload {
+    userId: number;
+    role: string;
+    jti: string; // Unique token ID for session tracking
+}
+
+async function authenticate(context: any): Promise<AuthPayload | { error: string; status: number }> {
+    const token = context.cookie?.token?.value;
+
+    if (!token) {
+        return { error: 'Unauthorized: No token provided', status: 401 };
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
+        return decoded;
+    } catch (error) {
+        return { error: 'Unauthorized: Invalid or expired token', status: 401 };
+    }
+}
+
+function requireAuth(requiredRole?: string) {
+    return async (context: any) => {
+        const auth = await authenticate(context);
+
+        if ('error' in auth) {
+            context.set.status = auth.status;
+            return { error: auth.error };
+        }
+
+        // Check role if required
+        if (requiredRole && auth.role !== requiredRole) {
+            context.set.status = 403;
+            return { error: `Forbidden: ${requiredRole}s only` };
+        }
+
+        // Attach auth data to context for use in route handler
+        context.auth = auth;
+        return;
+    };
+}
+
 const app = new Elysia()
     // anti-brute force, idk why its being marked as wrong but it just works trust me
     .use(rateLimit())
-    // CORS headers for frontend requests
-    .onBeforeHandle(({ set }) => {
-        set.headers['Access-Control-Allow-Origin'] = '*';
+    // CORS headers for frontend requests (secure configuration)
+    .onBeforeHandle(({ request, set }) => {
+        const origin = request.headers.get('origin');
+        // In development, allow localhost origins; in production, use FRONTEND_URL
+        if (process.env.NODE_ENV === 'development' && origin?.includes('localhost')) {
+            set.headers['Access-Control-Allow-Origin'] = origin;
+        } else {
+            const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:8080';
+            set.headers['Access-Control-Allow-Origin'] = allowedOrigin;
+        }
+        set.headers['Access-Control-Allow-Credentials'] = 'true';
         set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-        set.headers['Access-Control-Allow-Headers'] = 'Content-Type, x-user-role';
+        set.headers['Access-Control-Allow-Headers'] = 'Content-Type';
     })
     // Handle OPTIONS requests for CORS preflight
     .options('/*', () => {
@@ -144,7 +201,7 @@ const app = new Elysia()
         })
 
         // --- 2. Login ---
-        .post('/login', async ({ body, set, cookie: { session } }) => {
+        .post('/login', async ({ body, set, cookie }) => {
             const rows: any = await mysql `SELECT * FROM users WHERE email = ${body.email}`;
             const user = rows[0];
 
@@ -159,8 +216,29 @@ const app = new Elysia()
                 return { error: 'Invalid credentials' };
             }
 
-            // Simple session management (can use JWT instead)
-            // returning user info (exclude password!)
+            // Create JWT token with user info and unique session ID
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    role: user.role,
+                    jti: crypto.randomUUID() // Unique token ID for this session
+                },
+                JWT_SECRET,
+                { expiresIn: JWT_EXPIRY }
+            );
+
+            // Set HttpOnly cookie (not accessible via JavaScript - XSS protection)
+            cookie.token.set({
+                value: token,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+                sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // 'lax' for dev proxy compatibility
+                maxAge: JWT_EXPIRY_SECONDS,
+                path: '/',
+                domain: process.env.NODE_ENV === 'development' ? 'localhost' : undefined
+            });
+
+            // Return safe user info (exclude password!)
             return {
                 id: user.id,
                 fname: user.first_name,
@@ -176,13 +254,17 @@ const app = new Elysia()
             })
         })
 
-        // --- 3. Protected admin dashboard (role-based access) ---
-        .get('/admin/dashboard', async ({ headers, set }) => {
-            const userRole = headers['x-user-role'];
-            if (userRole !== 'admin') {
-                set.status = 403;
-                return { error: 'Forbidden: Admins only.' };
-            }
+        // --- 3. Logout ---
+        .post('/logout', ({ cookie, set }) => {
+            cookie.token.remove();
+            return { success: true, message: 'Logged out successfully' };
+        })
+
+        // --- 4. Protected admin dashboard (role-based access) ---
+        .get('/admin/dashboard', async ({ cookie, set }) => {
+            // Authenticate and check admin role
+            const authCheck = await requireAuth('admin')({ cookie, set });
+            if (authCheck) return authCheck; // Return error if auth failed
 
             const [totalResult] = await mysql `SELECT COUNT(*) AS count FROM users`;
             const [adminResult] = await mysql `SELECT COUNT(*) AS count FROM users WHERE role = 'admin'`;
@@ -205,16 +287,17 @@ const app = new Elysia()
             };
         })
 
-        // --- 4. Admin Panel Data ---
-        .get('/admin/users', async ({ headers, set }) => {
-            const userRole = headers['x-user-role'];
-            if (userRole !== 'admin') {
-                set.status = 403;
-                return { error: "Forbidden: Admins only." };
-            }
+        // --- 5. Admin Panel Data ---
+        .get('/admin/users', async ({ cookie, set }) => {
+            // Authenticate and check admin role
+            const authCheck = await requireAuth('admin')({ cookie, set });
+            if (authCheck) return authCheck; // Return error if auth failed
 
             const users = await mysql `SELECT id, first_name, last_name, email, phone_number, role, profile_photo_path, created_at FROM users ORDER BY created_at DESC`;
-            return users;
+
+            // Ensure proper JSON response
+            set.headers['content-type'] = 'application/json';
+            return Array.from(users || []);
         })
     )
     .listen(Number(process.env.PORT) || 3000);

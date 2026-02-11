@@ -13,18 +13,16 @@ const Admin = () => {
 
   useEffect(() => {
     // 3. Administration Panel
-    // Fetch users (this endpoint should be protected!)
+    // Fetch users (this endpoint is protected by JWT authentication)
     const fetchUsers = async () => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        
         const res = await fetch("/api/admin/users", {
-            headers: {
-                "x-user-role": user.role || "user" // Simple role check for demo
-            }
+            credentials: "include" // Send HttpOnly cookies for authentication
         });
-        
+
         if (res.ok) {
             setUsers(await res.json());
+        } else {
+            console.error("Failed to fetch users - unauthorized or forbidden");
         }
     };
     fetchUsers();
