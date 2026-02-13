@@ -1,73 +1,64 @@
-# Welcome to your Lovable project
+### 1. Pre-requisites
+- **Bun** (v1.0+) - [Install here](https://bun.sh/)
 
-## Project info
+### 2. Database Setup
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+1. Start your MySQL server, then Copy, Paste, then Run the provided schema.sql file into your database
 
-## How can I edit this code?
+### 3. Backend Setup
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+cd backend
 ```
 
-**Edit a file directly in GitHub**
+**Install dependencies:**
+```bash
+bun install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Create `.env` file:**
 
-**Use GitHub Codespaces**
+Create a file named `.env` in the `backend` folder:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```env
+# Database Configuration
+DB_NAME=""
+DB_HOST=""
+DB_USER=""
+DB_PASS=""
+DB_PORT=
 
-## What technologies are used for this project?
+# Server Configuration
+PORT=
+NODE_ENV=development
+FRONTEND_URL="http://localhost:8080"(or any url you prefer)
 
-This project is built with:
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
-## How can I deploy this project?
+**Start the backend:**
+```bash
+bun run dev
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### 4. Frontend Setup
 
-## Can I connect a custom domain to my Lovable project?
+Open a **new terminal** window:
 
-Yes, you can!
+```bash
+cd frontend
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+**Install dependencies:**
+```bash
+bun install
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Start the frontend:**
+```bash
+bun run dev
+```
+
+### 5. Access the Application
+
+Open your browser and visit: **http://localhost:8080** or the URL you set.
