@@ -66,3 +66,11 @@ bun run dev
 ### 5. Access the Application
 
 Open your browser and visit: **http://localhost:8080** or the URL you set.
+
+### 6. Accessing Admin Panel
+```bash
+After you create a user through the registration screen, you can update them to be an admin through the following command:
+UPDATE users 
+SET role = 'admin'
+WHERE id = 'test5@gmail.com';
+```
