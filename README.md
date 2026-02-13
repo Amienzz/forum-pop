@@ -28,6 +28,10 @@ DB_USER=""
 DB_PASS=""
 DB_PORT=
 
+
+# JWT Configuration
+JWT_SECRET=""
+
 # Server Configuration
 PORT=
 NODE_ENV=development
